@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0e0e10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mod Hub</title>
+<style>
+  :root {
+    --bg: #0e0e10; --panel: #18181b; --panel2: #1f1f23; --line: #2f2f35;
+    --text: #efeff1; --muted: #adadb8; --accent: #9147ff; --accent2: #772ce8;
+    --live: #eb0400; --ok: #00c853; --warn: #ffb300; --danger: #e91916;
+    --hl: rgba(145, 71, 255, .18); --first: rgba(0, 200, 83, .10);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+  button, input, select { font: inherit; color: inherit; }
+  button { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  button:active { background: #2a2a30; }
+  button.primary { background: var(--accent); border-color: var(--accent); }
+  button.danger { background: var(--danger); border-color: var(--danger); }
+  button.icon { background: transparent; border: 0; padding: 8px 10px; font-size: 18px; }
+  input { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; outline: none; width: 100%; }
+  input:focus { border-color: var(--accent); }
+  a { color: #bf94ff; }
+  .hidden { display: none !important; }
+
+  .scr { position: fixed; inset: 0; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+  .center { display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: 100%; max-width: 440px; }
+  .card h1 { margin: 0 0 8px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .card p, .card li { color: var(--muted); }
+  .card code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; color: var(--text); word-break: break-all; }
+  .logo { width: 44px; height: 44px; border-radius: 50%; flex: none; }
+  .row { display: flex; gap: 8px; align-items: center; }
+
+  .bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel); border-bottom: 1px solid var(--line); min-height: 54px; }
+  .bar .t { flex: 1; min-width: 0; }
+  .bar .n { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .s { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .logo { width: 32px; height: 32px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #555; flex: none; }
+  .dot.on { background: var(--ok); }
+  .dot.live { background: var(--live); }
+
+  .tools { padding: 8px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+  .tools label { color: var(--muted); display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .tools label input { width: auto; }
+  .scroll { flex: 1; overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; }
+  .sec { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding: 12px 14px 4px; }
+  .ch { display: flex; align-items: center; gap: 10px; padding: 10px 14px; min-height: 58px; border-bottom: 1px solid #1a1a1e; }
+  .ch:active { background: var(--panel2); }
+  .ch .info { flex: 1; min-width: 0; }
+  .ch .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ch .sub { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ch.off .n { color: var(--muted); font-weight: 400; }
+  .badge { background: #3a3a40; border-radius: 10px; padding: 1px 7px; font-size: 12px; min-width: 22px; text-align: center; }
+  .badge.mention { background: var(--danger); }
+  .role { font-size: 10px; font-weight: 700; padding: 0 4px; border-radius: 3px; margin-left: 6px; vertical-align: 1px; }
+  .role.vip { background: #e005b9; } .role.mod { background: #00ad03; } .role.extra { background: #3a3a40; color: var(--muted); }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  .chips:empty { display: none; }
+  .chip { font-size: 11px; background: #3a3a40; border-radius: 4px; padding: 1px 6px; }
+  .chip.live { background: var(--live); }
+
+  #player { aspect-ratio: 16 / 9; width: 100%; background: #000; flex: none; }
+  #player iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .chatwrap { position: relative; flex: 1; min-height: 0; }
+  #chat { position: absolute; inset: 0; overflow-y: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
+  .m { padding: 4px 12px; word-wrap: break-word; }
+  .m:active { background: #1c1c20; }
+  .m.hl { background: var(--hl); }
+  .m.first { background: var(--first); }
+  .m.del .body { text-decoration: line-through; opacity: .45; }
+  .m.sys { color: var(--muted); font-style: italic; font-size: 13px; }
+  .m.sys.mod { color: var(--warn); }
+  .m .time { color: #6b6b75; font-size: 11px; margin-right: 4px; }
+  .m .chan { font-size: 11px; color: #bf94ff; margin-right: 4px; }
+  .m .bdg { font-size: 9px; font-weight: 700; padding: 0 3px; border-radius: 3px; margin-right: 3px; vertical-align: 2px; }
+  .bdg.b { background: var(--live); } .bdg.mo { background: #00ad03; } .bdg.v { background: #e005b9; }
+  .bdg.su { background: var(--accent); } .bdg.st { background: #555; }
+  .m .user { font-weight: 700; }
+  .m .reply { color: var(--muted); font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .emote { height: 26px; vertical-align: middle; margin: -4px 0; }
+  #more { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 2; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 16px; }
+
+  footer { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); }
+  footer input { flex: 1; }
+
+  #shade { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 9; }
+  #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--panel); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); max-height: 80vh; overflow-y: auto; }
+  #sheet .head { display: flex; align-items: center; gap: 8px; }
+  #sheet .head b { flex: 1; font-size: 17px; }
+  #sheet .sub { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  #sheet .msg { background: var(--panel2); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; word-wrap: break-word; }
+  #sheet .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+  #sheet .full { width: 100%; margin-top: 6px; }
+  #sheet .hist { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; font-size: 13px; }
+  #sheet .hist div { padding: 3px 0; color: var(--muted); }
+  #sheet .hist div.del { text-decoration: line-through; opacity: .5; }
+
+  #toasts { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); display: grid; gap: 6px; z-index: 20; pointer-events: none; }
+  .toast { background: var(--panel2); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px; }
+  .toast.err { border-left-color: var(--danger); }
+  .toast.ok { border-left-color: var(--ok); }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginScr" class="scr center hidden">
+  <div class="card">
+    <h1><img class="logo" src="icon-192.png" alt="">Twitch Mod Hub</h1>
+    <p>Modere todos os chats onde você é mod ou VIP, direto do celular.</p>
+    <button class="primary" id="doLogin" style="width:100%">Entrar com a Twitch</button>
+    <details style="margin-top:14px">
+      <summary style="color:var(--muted)">Configuração avançada</summary>
+      <p>Client ID do app na Twitch. No console da Twitch, o endereço abaixo precisa estar nas <b>URLs de redirecionamento OAuth</b>:</p>
+      <p><code id="redirectUrl"></code></p>
+      <input id="clientId" placeholder="Client ID">
+      <button id="saveClient" style="margin-top:8px">Salvar Client ID</button>
+    </details>
+  </div>
+</div>
+
+<!-- Lista de canais -->
+<div id="listScr" class="scr hidden">
+  <div class="bar">
+    <img class="logo" src="icon-192.png" alt="">
+    <div class="t"><div class="n" id="mename"></div><div class="s" id="ircstatus">Conectando…</div></div>
+    <span class="dot" id="ircdot"></span>
+    <button class="icon" id="refresh" title="Atualizar">⟳</button>
+    <button class="icon" id="logout" title="Sair">⏻</button>
+  </div>
+  <div class="tools">
+    <input id="filter" placeholder="Filtrar canais…" autocomplete="off">
+    <div class="row"><input id="addChan" placeholder="Adicionar canal" autocomplete="off" autocapitalize="off"><button id="addBtn">+</button></div>
+    <label><input type="checkbox" id="autojoin"> Entrar sozinho no chat de quem ficar ao vivo</label>
+  </div>
+  <div class="scroll" id="chanlist"></div>
+</div>
+
+<!-- Chat -->
+<div id="chatScr" class="scr hidden">
+  <div class="bar">
+    <button class="icon" id="back">←</button>
+    <div class="t"><div class="n" id="vname"></div><div class="s" id="vsub"></div></div>
+    <button class="icon" id="playerBtn" title="Ver a live aqui">▶</button>
+    <button class="icon" id="appBtn" title="Abrir no app da Twitch">↗</button>
+    <button class="icon" id="joinBtn" title="Entrar/sair do chat">💬</button>
+    <button class="icon" id="removeBtn" title="Tirar da lista">✕</button>
+  </div>
+  <div id="player" class="hidden"></div>
+  <div class="chips" id="vchips"></div>
+  <div class="chatwrap">
+    <div id="chat"></div>
+    <button id="more" class="primary hidden">Novas mensagens ↓</button>
+  </div>
+  <footer>
+    <input id="input" maxlength="500" autocomplete="off" enterkeyhint="send">
+    <button class="primary" id="sendBtn">➤</button>
+  </footer>
+</div>
+
+<div id="shade" class="hidden"></div>
+<div id="sheet" class="hidden"></div>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+// Versão celular: roda 100% no aparelho, falando direto com a Twitch (chat por WebSocket, moderação pela API Helix).
+const DEFAULT_CLIENT_ID = 'dsu2m9j2f14j15222x51ckmqw7bus3';
+const SCOPES = 'user:read:moderated_channels user:read:follows chat:read chat:edit moderator:manage:banned_users moderator:manage:chat_messages';
+const REDIRECT = location.origin + location.pathname;
+const MAX_MSGS = 200, MAX_ALL = 300;
+const $ = id => document.getElementById(id);
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('mh:' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('mh:' + k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem('mh:' + k); } catch {} },
+};
+
+const cfg = {
+  clientId: store.get('clientId', DEFAULT_CLIENT_ID),
+  token: store.get('tokenScopes', '') === SCOPES ? store.get('token', null) : null,
+  user: store.get('user', null),
+};
+
+const S = {
+  channels: [], byLogin: new Map(), view: null,
+  msgs: new Map(), all: [], unread: new Map(), mention: new Set(), rooms: new Map(),
+  follow: true, playerOn: false,
+};
+
+function toast(text, kind = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = text;
+  $('toasts').append(el);
+  setTimeout(() => el.remove(), kind === 'err' ? 6000 : 3000);
+}
+
+function show(id) {
+  for (const s of ['loginScr', 'listScr', 'chatScr']) $(s).classList.toggle('hidden', s !== id);
+}
+
+// ---------- Login (OAuth implícito: a Twitch devolve o token no endereço) ----------
+function handleRedirect() {
+  const q = new URLSearchParams(location.search), h = new URLSearchParams(location.hash.slice(1));
+  const err = q.get('error') || h.get('error');
+  if (err) toast('Login cancelado: ' + (q.get('error_description') || h.get('error_description') || err), 'err');
+  if (h.get('access_token')) {
+    if (h.get('state') !== store.get('state')) toast('Login inválido, tente de novo.', 'err');
+    else {
+      cfg.token = h.get('access_token');
+      store.set('token', cfg.token);
+      store.set('tokenScopes', SCOPES);
+    }
+  }
+  if (err || h.get('access_token')) history.replaceState(null, '', REDIRECT);
+}
+
+$('doLogin').onclick = () => {
+  const state = crypto.randomUUID();
+  store.set('state', state);
+  location.href = 'https://id.twitch.tv/oauth2/authorize?' + new URLSearchParams({
+    response_type: 'token', client_id: cfg.clientId, redirect_uri: REDIRECT, scope: SCOPES, state,
+  });
+};
+$('redirectUrl').textContent = REDIRECT;
+$('clientId').value = cfg.clientId;
+$('saveClient').onclick = () => {
+  const id = $('clientId').value.trim();
+  if (!/^[a-z0-9]{20,40}$/i.test(id)) return toast('Client ID inválido.', 'err');
+  cfg.clientId = id;
+  store.set('clientId', id);
+  toast('Client ID salvo.', 'ok');
+};
+
+function logout(revoke) {
+  if (revoke && cfg.token) {
+    fetch('https://id.twitch.tv/oauth2/revoke', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: cfg.clientId, token: cfg.token }),
+    }).catch(() => {});
+  }
+  cfg.token = null; cfg.user = null;
+  store.del('token'); store.del('user');
+  ircClose();
+  irc.wanted.clear();
+  S.channels = []; S.msgs.clear(); S.all = [];
+  closePlayer();
+  show('loginScr');
+}
+$('logout').onclick = () => { if (confirm('Sair da conta da Twitch neste app?')) logout(true); };
+
+// ---------- API Helix ----------
+async function helix(method, p, body) {
+  const headers = { 'Client-Id': cfg.clientId, Authorization: 'Bearer ' + cfg.token };
+  if (body) headers['Content-Type'] = 'application/json';
+  const r = await fetch('https://api.twitch.tv/helix' + p, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401) { logout(false); toast('Seu login expirou. Entre de novo.', 'err'); throw new Error('Login expirou.'); }
+  const text = await r.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch {}
+  if (!r.ok) throw new Error(data.message || `Erro da Twitch (${r.status})`);
+  return data;
+}
+async function helixAll(p) {
+  const out = [];
+  let after = '';
+  do {
+    const d = await helix('GET', p + (after ? '&after=' + encodeURIComponent(after) : ''));
+    out.push(...d.data);
+    after = d.pagination?.cursor || '';
+  } while (after);
+  return out;
+}
+
+async function loadIdentity() {
+  const d = await helix('GET', '/users');
+  const u = d.data[0];
+  cfg.user = { id: u.id, login: u.login, name: u.display_name };
+  store.set('user', cfg.user);
+}
+
+// Papéis: own (seu canal), mod, vip (descoberto pelo selo no chat), extra (adicionado na mão).
+async function getChannels() {
+  const me = cfg.user;
+  const vips = store.get('vipChannels', {}), extras = store.get('extraChannels', {});
+  const byLogin = new Map();
+  const add = (login, id, name, role) => { if (!byLogin.has(login)) byLogin.set(login, { id, login, name, role }); };
+  add(me.login, me.id, me.name, 'own');
+  for (const c of await helixAll(`/moderation/channels?user_id=${me.id}&first=100`)) add(c.broadcaster_login, c.broadcaster_id, c.broadcaster_name, 'mod');
+  for (const [login, v] of Object.entries(vips)) add(login, v.id, v.name, 'vip');
+  for (const [login, v] of Object.entries(extras)) add(login, v.id, v.name, 'extra');
+
+  const missing = [...byLogin.values()].filter(c => !c.id);
+  for (let i = 0; i < missing.length; i += 100) {
+    const d = await helix('GET', '/users?' + missing.slice(i, i + 100).map(c => 'login=' + c.login).join('&'));
+    for (const u of d.data) {
+      const c = byLogin.get(u.login);
+      c.id = u.id; c.name = u.display_name;
+      const bucket = c.role === 'vip' ? vips : extras;
+      if (bucket[u.login]) bucket[u.login] = { id: u.id, name: u.display_name };
+    }
+  }
+  if (missing.length) { store.set('vipChannels', vips); store.set('extraChannels', extras); }
+  const list = [...byLogin.values()].filter(c => c.id);
+
+  const live = new Map();
+  for (let i = 0; i < list.length; i += 100) {
+    const d = await helix('GET', '/streams?first=100&' + list.slice(i, i + 100).map(c => 'user_id=' + c.id).join('&'));
+    for (const s of d.data) live.set(s.user_id, s);
+  }
+  try {
+    for (const s of await helixAll(`/streams/followed?user_id=${me.id}&first=100`)) if (!byLogin.has(s.user_login)) probeChannel(s.user_login);
+  } catch {}
+
+  return list.map(c => {
+    const s = live.get(c.id);
+    return {
+      ...c, own: c.role === 'own', live: !!s, title: s?.title || '', game: s?.game_name || '',
+      viewers: s?.viewer_count || 0, startedAt: s?.started_at || null,
+    };
+  });
+}
+
+async function moderate(a) {
+  const base = `broadcaster_id=${encodeURIComponent(a.broadcasterId)}&moderator_id=${cfg.user.id}`;
+  if (a.action === 'delete') return helix('DELETE', `/moderation/chat?${base}&message_id=${encodeURIComponent(a.messageId)}`);
+  let uid = a.userId;
+  if (!uid) {
+    const d = await helix('GET', '/users?login=' + encodeURIComponent(a.login));
+    if (!d.data[0]) throw new Error(`Usuário "${a.login}" não encontrado.`);
+    uid = d.data[0].id;
+  }
+  const reason = String(a.reason || '').slice(0, 500);
+  if (a.action === 'timeout') return helix('POST', `/moderation/bans?${base}`, { data: { user_id: uid, duration: a.duration, reason } });
+  if (a.action === 'ban') return helix('POST', `/moderation/bans?${base}`, { data: { user_id: uid, reason } });
+  if (a.action === 'unban') return helix('DELETE', `/moderation/bans?${base}&user_id=${uid}`);
+}
+
+// ---------- Chat (IRC por WebSocket) ----------
+const irc = {
+  ws: null, ready: false, backoff: 1000, wanted: new Set(), joined: new Set(), queue: [], userstate: new Map(),
+  probing: new Set(), checked: new Set(),
+};
+function raw(line) { if (irc.ws?.readyState === 1) irc.ws.send(line); }
+
+function ircConnect() {
+  if (!cfg.token || !cfg.user) return;
+  ircClose();
+  const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  irc.ws = ws;
+  ws.onopen = () => {
+    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    ws.send('PASS oauth:' + cfg.token);
+    ws.send('NICK ' + cfg.user.login);
+  };
+  ws.onmessage = e => {
+    for (const line of e.data.split('\r\n')) if (line) { try { onLine(line); } catch (err) { console.error(err); } }
+  };
+  ws.onclose = () => {
+    if (irc.ws !== ws) return;
+    irc.ws = null; irc.ready = false; irc.joined.clear();
+    setIrc(false);
+    setTimeout(() => { if (!irc.ws && cfg.token && document.visibilityState === 'visible') ircConnect(); }, irc.backoff);
+    irc.backoff = Math.min(irc.backoff * 2, 30000);
+  };
+}
+function ircClose() {
+  const ws = irc.ws;
+  irc.ws = null; irc.ready = false; irc.joined.clear(); irc.queue = []; irc.probing.clear(); irc.checked.clear();
+  if (ws) ws.close();
+}
+setInterval(() => { if (irc.ready && irc.queue.length) raw(irc.queue.shift()); }, 600);
+
+// O Android pausa apps em segundo plano; ao voltar, reconecta e atualiza.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !cfg.token || !cfg.user) return;
+  if (!irc.ws) { irc.backoff = 1000; ircConnect(); }
+  loadChannels();
+});
+
+function joinChannel(login) {
+  irc.wanted.add(login);
+  if (irc.ready && !irc.joined.has(login) && !irc.queue.includes('JOIN #' + login)) irc.queue.push('JOIN #' + login);
+  chatsChanged();
+}
+function partChannel(login) {
+  irc.wanted.delete(login);
+  irc.queue = irc.queue.filter(j => j !== 'JOIN #' + login);
+  if (irc.joined.has(login)) raw('PART #' + login);
+  irc.joined.delete(login);
+  chatsChanged();
+}
+function probeChannel(login) {
+  if (!irc.ready || irc.checked.has(login) || irc.wanted.has(login) || irc.joined.has(login)) return;
+  irc.checked.add(login);
+  irc.probing.add(login);
+  irc.queue.push('JOIN #' + login);
+  setTimeout(() => { if (irc.probing.delete(login) && !irc.wanted.has(login) && irc.joined.has(login)) raw('PART #' + login); }, 60000);
+}
+function updateVip(channel, badges) {
+  const vips = store.get('vipChannels', {});
+  const isVip = /(^|,)vip\//.test(badges || ''), known = !!vips[channel];
+  if (isVip === known) return;
+  if (isVip) vips[channel] = { id: '', name: channel }; else delete vips[channel];
+  store.set('vipChannels', vips);
+  toast(isVip ? `Você é VIP em #${channel} — adicionado à lista.` : `Você não é mais VIP em #${channel}.`, isVip ? 'ok' : '');
+  loadChannels();
+}
+
+function unescapeTag(v) {
+  return v.replace(/\\(.)/g, (_, c) => ({ s: ' ', ':': ';', '\\': '\\', r: '\r', n: '\n' }[c] ?? c));
+}
+function parse(line) {
+  const tags = {};
+  if (line[0] === '@') {
+    const sp = line.indexOf(' ');
+    for (const kv of line.slice(1, sp).split(';')) {
+      const e = kv.indexOf('=');
+      if (e < 0) tags[kv] = ''; else tags[kv.slice(0, e)] = unescapeTag(kv.slice(e + 1));
+    }
+    line = line.slice(sp + 1);
+  }
+  let prefix = '';
+  if (line[0] === ':') { const sp = line.indexOf(' '); prefix = line.slice(1, sp); line = line.slice(sp + 1); }
+  let trailing = null;
+  const t = line.indexOf(' :');
+  if (t >= 0) { trailing = line.slice(t + 2); line = line.slice(0, t); }
+  const params = line.split(' ').filter(Boolean);
+  const command = params.shift();
+  if (trailing !== null) params.push(trailing);
+  return { tags, prefix, command, params };
+}
+
+function chatMessage(t, channel, login, text) {
+  let action = false;
+  if (text.startsWith('\x01ACTION ') && text.endsWith('\x01')) { action = true; text = text.slice(8, -1); }
+  return {
+    channel, id: t.id || null, roomId: t['room-id'] || '', userId: t['user-id'] || '', login,
+    name: t['display-name'] || login, color: t.color || '', badges: t.badges || '', emotes: t.emotes || '',
+    text, action, first: t['first-msg'] === '1', ts: Number(t['tmi-sent-ts']) || Date.now(),
+    replyTo: t['reply-parent-display-name'] || '', replyText: t['reply-parent-msg-body'] || '',
+  };
+}
+
+function onLine(line) {
+  const { tags, prefix, command, params } = parse(line);
+  const channel = (params[0] || '').replace(/^#/, '');
+  const nick = prefix.split('!')[0];
+  const shown = irc.wanted.has(channel);
+  const ts = Number(tags['tmi-sent-ts']) || Date.now();
+
+  switch (command) {
+    case 'PING': raw('PONG :' + (params[0] || 'tmi.twitch.tv')); break;
+    case '001':
+      irc.ready = true; irc.backoff = 1000;
+      irc.queue = [...irc.wanted].map(c => 'JOIN #' + c);
+      setIrc(true);
+      loadChannels();
+      break;
+    case 'RECONNECT': ircConnect(); break;
+    case 'JOIN': if (nick === cfg.user.login) { irc.joined.add(channel); chatsChanged(); } break;
+    case 'PART': if (nick === cfg.user.login) { irc.joined.delete(channel); chatsChanged(); } break;
+    case 'PRIVMSG': if (shown) addMsg(chatMessage(tags, channel, nick, params[1] || '')); break;
+    case 'USERNOTICE':
+      if (shown && tags['system-msg']) addSys(channel, params[1] ? `${tags['system-msg']} — ${params[1]}` : tags['system-msg'], ts);
+      break;
+    case 'CLEARCHAT':
+      if (!shown) break;
+      if (!params[1]) { addSys(channel, 'O chat foi limpo por um moderador.', ts, true); break; }
+      for (const m of S.msgs.get(channel) || []) if (m.login === params[1]) m.deleted = true;
+      for (const el of document.querySelectorAll(`.m[data-chan="${channel}"][data-user="${CSS.escape(params[1])}"]`)) el.classList.add('del');
+      addSys(channel, tags['ban-duration'] ? `${params[1]} levou timeout de ${fmtDur(Number(tags['ban-duration']))}.` : `${params[1]} foi banido.`, ts, true);
+      break;
+    case 'CLEARMSG': {
+      if (!shown) break;
+      const id = tags['target-msg-id'];
+      const m = (S.msgs.get(channel) || []).find(x => x.id === id);
+      if (m) m.deleted = true;
+      for (const el of document.querySelectorAll(`.m[data-id="${CSS.escape(id)}"]`)) el.classList.add('del');
+      break;
+    }
+    case 'USERSTATE':
+      irc.userstate.set(channel, tags);
+      updateVip(channel, tags.badges);
+      if (irc.probing.delete(channel) && !shown) raw('PART #' + channel);
+      break;
+    case 'ROOMSTATE': {
+      const r = { ...(S.rooms.get(channel) || {}), roomId: tags['room-id'] };
+      if ('slow' in tags) r.slow = Number(tags.slow);
+      if ('emote-only' in tags) r.emoteOnly = tags['emote-only'] === '1';
+      if ('followers-only' in tags) r.followers = Number(tags['followers-only']);
+      if ('subs-only' in tags) r.subs = tags['subs-only'] === '1';
+      S.rooms.set(channel, r);
+      if (channel === S.view) renderHeader();
+      break;
+    }
+    case 'NOTICE':
+      if (params[0] === '*' && /authentication failed|improperly formatted auth/i.test(params[1] || '')) {
+        logout(false); toast('Seu login expirou. Entre de novo.', 'err'); return;
+      }
+      if (shown) addSys(channel, params[1] || '', Date.now());
+      break;
+  }
+}
+
+function sendChat(channel, text) {
+  text = text.replace(/[\r\n]+/g, ' ').trim().slice(0, 500);
+  if (!text) return;
+  if (!irc.ready || !irc.joined.has(channel)) throw new Error('Ainda não conectado nesse chat.');
+  const out = /^\/me\s/i.test(text) ? '\x01ACTION ' + text.slice(4) + '\x01' : text;
+  raw(`PRIVMSG #${channel} :${out}`);
+  addMsg(chatMessage({ ...(irc.userstate.get(channel) || {}), id: '' }, channel, cfg.user.login, out));
+}
+
+function setIrc(c) {
+  $('ircdot').classList.toggle('on', c);
+  $('ircstatus').textContent = c ? `${irc.joined.size} chats conectados` : 'Conectando ao chat…';
+}
+function chatsChanged() {
+  if (irc.ready) $('ircstatus').textContent = `${irc.joined.size} chats conectados`;
+  scheduleList();
+  if (S.view) renderHeader();
+}
+
+// ---------- Canais ----------
+let loading = false;
+async function loadChannels() {
+  if (loading || !cfg.user) return;
+  loading = true;
+  try {
+    S.channels = await getChannels();
+    S.byLogin = new Map(S.channels.map(c => [c.login, c]));
+    if ($('autojoin').checked) for (const c of S.channels) if (c.live && !irc.wanted.has(c.login)) joinChannel(c.login);
+    renderList();
+    if (S.view) renderHeader();
+  } catch (e) { toast('Não consegui carregar os canais: ' + e.message, 'err'); }
+  finally { loading = false; }
+}
+setInterval(() => { if (cfg.user && document.visibilityState === 'visible') loadChannels(); }, 60000);
+$('refresh').onclick = () => loadChannels();
+
+$('autojoin').checked = store.get('autojoin', true);
+$('autojoin').onchange = () => { store.set('autojoin', $('autojoin').checked); if ($('autojoin').checked) loadChannels(); };
+$('filter').oninput = () => renderList();
+
+async function addChannel() {
+  const login = $('addChan').value.trim().replace(/^@|^https?:\/\/(www\.|m\.)?twitch\.tv\//, '').toLowerCase();
+  if (!login) return;
+  if (!/^[a-z0-9_]{1,25}$/.test(login)) return toast('Canal inválido.', 'err');
+  store.set('extraChannels', { ...store.get('extraChannels', {}), [login]: { id: '', name: login } });
+  $('addChan').value = '';
+  await loadChannels();
+  if (S.byLogin.has(login)) openChat(login);
+  else toast(`Canal "${login}" não encontrado.`, 'err');
+}
+$('addBtn').onclick = addChannel;
+$('addChan').addEventListener('keydown', e => { if (e.key === 'Enter') addChannel(); });
+
+function fmtViewers(n) { return n >= 1000 ? (n / 1000).toFixed(1).replace('.0', '') + ' mil' : String(n); }
+function uptime(iso) {
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  return `${Math.floor(s / 3600)}h${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}`;
+}
+
+let listTimer = null;
+function scheduleList() { if (!listTimer) listTimer = setTimeout(() => { listTimer = null; renderList(); }, 500); }
+
+function renderList() {
+  const box = $('chanlist');
+  const f = $('filter').value.trim().toLowerCase();
+  const list = S.channels.filter(c => !f || c.login.includes(f) || c.name.toLowerCase().includes(f));
+  const live = list.filter(c => c.live).sort((a, b) => b.viewers - a.viewers);
+  const off = list.filter(c => !c.live).sort((a, b) => (b.own - a.own) || a.login.localeCompare(b.login));
+  const top = box.scrollTop;
+  box.textContent = '';
+  box.append(item({ login: '*', name: 'Todos os chats' }, true));
+  if (live.length) box.append(sec(`Ao vivo (${live.length})`));
+  for (const c of live) box.append(item(c));
+  if (off.length) box.append(sec(`Offline (${off.length})`));
+  for (const c of off) box.append(item(c));
+  if (!S.channels.length) box.append(Object.assign(document.createElement('div'), { className: 'empty', textContent: 'Carregando canais…' }));
+  box.scrollTop = top;
+
+  function sec(t) { return Object.assign(document.createElement('div'), { className: 'sec', textContent: t }); }
+  function item(c, isAll) {
+    const el = document.createElement('div');
+    el.className = 'ch' + (!c.live && !isAll ? ' off' : '');
+    const dot = document.createElement('span');
+    dot.className = 'dot' + (c.live ? ' live' : '');
+    if (isAll) dot.style.visibility = 'hidden';
+    const info = document.createElement('div');
+    info.className = 'info';
+    const n = document.createElement('div');
+    n.className = 'n';
+    n.textContent = c.name + (c.own ? ' (você)' : '');
+    if (c.role && c.role !== 'own') n.append(span('role ' + c.role, { mod: 'MOD', vip: 'VIP', extra: '+' }[c.role]));
+    const sub = document.createElement('div');
+    sub.className = 'sub';
+    const inChat = irc.joined.has(c.login) ? '💬 ' : '';
+    sub.textContent = isAll ? `${irc.joined.size} chats conectados` : inChat + (c.live ? `${fmtViewers(c.viewers)} • ${c.game || 'Sem categoria'}` : (inChat ? 'no chat' : ''));
+    info.append(n, sub);
+    el.append(dot, info);
+    const u = S.unread.get(c.login);
+    if (u) {
+      const b = document.createElement('span');
+      b.className = 'badge' + (S.mention.has(c.login) ? ' mention' : '');
+      b.textContent = u > 99 ? '99+' : u;
+      el.append(b);
+    }
+    el.onclick = () => openChat(c.login);
+    return el;
+  }
+}
+
+function openChat(login, push = true) {
+  if (S.view !== login) closePlayer();
+  S.view = login;
+  S.unread.delete(login);
+  S.mention.delete(login);
+  if (login !== '*' && !irc.wanted.has(login)) joinChannel(login);
+  show('chatScr');
+  renderHeader(); renderChat();
+  if (push) history.pushState({ chat: login }, '');
+}
+function closeChat() {
+  closePlayer();
+  S.view = null;
+  show('listScr');
+  renderList();
+}
+$('back').onclick = () => history.back();
+// Botão "voltar" do Android: fecha a folha de ações ou volta para a lista.
+addEventListener('popstate', () => {
+  if (!$('sheet').classList.contains('hidden')) { closeSheet(); history.pushState({ chat: S.view }, ''); return; }
+  if (S.view) closeChat();
+});
+
+function renderHeader() {
+  const v = S.view, all = v === '*';
+  const c = S.byLogin.get(v);
+  $('vname').textContent = all ? 'Todos os chats' : (c?.name || v);
+  $('vsub').textContent = all ? 'Toque no #canal para ir até ele' : c?.live ? `${c.title}` : (irc.joined.has(v) ? 'Offline' : 'Conectando ao chat…');
+  for (const id of ['playerBtn', 'appBtn', 'joinBtn']) $(id).classList.toggle('hidden', all);
+  $('removeBtn').classList.toggle('hidden', all || c?.role !== 'extra');
+  $('joinBtn').style.opacity = irc.wanted.has(v) ? 1 : .4;
+  $('playerBtn').textContent = S.playerOn ? '■' : '▶';
+  const chips = $('vchips');
+  chips.textContent = '';
+  const chip = (t, cls = '') => chips.append(Object.assign(document.createElement('span'), { className: 'chip ' + cls, textContent: t }));
+  if (!all) {
+    if (c?.live) chip(`AO VIVO • ${fmtViewers(c.viewers)} • ${uptime(c.startedAt)}`, 'live');
+    if (c?.role === 'vip') chip('Você é VIP');
+    const r = S.rooms.get(v) || {};
+    if (r.slow) chip(`Lento ${r.slow}s`);
+    if (r.emoteOnly) chip('Só emotes');
+    if (r.followers !== undefined && r.followers >= 0) chip(r.followers ? `Seguidores ${r.followers}min` : 'Só seguidores');
+    if (r.subs) chip('Só inscritos');
+  }
+  const inp = $('input');
+  const can = !all && irc.joined.has(v);
+  inp.disabled = !can; $('sendBtn').disabled = !can;
+  inp.placeholder = all ? 'Escolha um canal para falar' : !can ? 'Conectando ao chat…' : `Mensagem para #${v}`;
+}
+
+// Player embutido só do canal aberto (fecha ao sair, para economizar bateria e dados).
+function closePlayer() {
+  S.playerOn = false;
+  $('player').textContent = '';
+  $('player').classList.add('hidden');
+}
+$('playerBtn').onclick = () => {
+  if (S.playerOn) { closePlayer(); renderHeader(); return; }
+  S.playerOn = true;
+  const f = document.createElement('iframe');
+  f.src = `https://player.twitch.tv/?channel=${encodeURIComponent(S.view)}&parent=${location.hostname}&autoplay=true&muted=false`;
+  f.allow = 'autoplay; fullscreen';
+  f.allowFullscreen = true;
+  $('player').append(f);
+  $('player').classList.remove('hidden');
+  renderHeader();
+};
+$('appBtn').onclick = () => window.open('https://www.twitch.tv/' + S.view, '_blank');
+$('joinBtn').onclick = () => { irc.wanted.has(S.view) ? partChannel(S.view) : joinChannel(S.view); };
+$('removeBtn').onclick = async () => {
+  const v = S.view;
+  const extras = store.get('extraChannels', {});
+  delete extras[v];
+  store.set('extraChannels', extras);
+  partChannel(v);
+  S.msgs.delete(v);
+  history.back();
+  await loadChannels();
+};
+
+// ---------- Mensagens ----------
+function push(arr, m, max) { arr.push(m); if (arr.length > max) arr.splice(0, arr.length - max); }
+function addMsg(m) {
+  m.mention = m.login !== cfg.user.login && new RegExp(`(^|\\W)@?${cfg.user.login}(\\W|$)`, 'i').test(m.text);
+  storeMsg(m);
+  if (S.view !== m.channel && S.view !== '*') {
+    S.unread.set(m.channel, (S.unread.get(m.channel) || 0) + 1);
+    if (m.mention) { S.mention.add(m.channel); if (navigator.vibrate) navigator.vibrate(60); }
+    if (!S.view) scheduleList();
+  }
+}
+function addSys(channel, text, ts, mod) { storeMsg({ sys: true, mod: !!mod, channel, text, ts }); }
+function storeMsg(m) {
+  if (!S.msgs.has(m.channel)) S.msgs.set(m.channel, []);
+  push(S.msgs.get(m.channel), m, MAX_MSGS);
+  push(S.all, m, MAX_ALL);
+  if (S.view === m.channel || S.view === '*') queueRender(m);
+}
+
+let pending = [];
+function queueRender(m) { pending.push(m); if (pending.length === 1) requestAnimationFrame(flush); }
+function flush() {
+  const chat = $('chat');
+  const frag = document.createDocumentFragment();
+  for (const m of pending) frag.append(msgEl(m));
+  pending = [];
+  chat.querySelector('.empty')?.remove();
+  chat.append(frag);
+  const max = S.view === '*' ? MAX_ALL : MAX_MSGS;
+  while (chat.childElementCount > max) chat.firstElementChild.remove();
+  if (S.follow) chat.scrollTop = chat.scrollHeight;
+  else $('more').classList.remove('hidden');
+}
+function renderChat() {
+  const chat = $('chat');
+  pending = [];
+  chat.textContent = '';
+  const list = S.view === '*' ? S.all : (S.msgs.get(S.view) || []);
+  if (!list.length) chat.append(Object.assign(document.createElement('div'), { className: 'empty', textContent: 'Nenhuma mensagem ainda.' }));
+  const frag = document.createDocumentFragment();
+  for (const m of list) frag.append(msgEl(m));
+  chat.append(frag);
+  S.follow = true;
+  $('more').classList.add('hidden');
+  chat.scrollTop = chat.scrollHeight;
+}
+$('chat').addEventListener('scroll', () => {
+  const c = $('chat');
+  S.follow = c.scrollHeight - c.scrollTop - c.clientHeight < 60;
+  if (S.follow) $('more').classList.add('hidden');
+}, { passive: true });
+$('more').onclick = () => { S.follow = true; $('chat').scrollTop = $('chat').scrollHeight; $('more').classList.add('hidden'); };
+
+function fmtTime(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function fmtDur(s) {
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.round(s / 60) + 'min';
+  if (s < 86400) return Math.round(s / 3600) + 'h';
+  return Math.round(s / 86400) + 'd';
+}
+const nameColors = ['#ff7f50', '#1e90ff', '#00ff7f', '#9acd32', '#daa520', '#ff69b4', '#5f9ea0', '#d2691e', '#8a2be2', '#b22222'];
+function userColor(m) {
+  const c = m.color;
+  if (!c) { let h = 0; for (const ch of m.login) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return nameColors[h % nameColors.length]; }
+  const n = parseInt(c.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  if ((0.299 * r + 0.587 * g + 0.114 * b) / 255 >= 0.4) return c;
+  const mix = v => Math.round(v + (255 - v) * 0.45);
+  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+}
+const BADGES = { broadcaster: ['STR', 'b'], moderator: ['MOD', 'mo'], vip: ['VIP', 'v'], subscriber: ['SUB', 'su'], founder: ['SUB', 'su'], staff: ['STAFF', 'st'] };
+function isPrivileged(m) { return /(^|,)(broadcaster|moderator|staff)\//.test(m.badges); }
+function isModOf(channel) { return ['own', 'mod'].includes(S.byLogin.get(channel)?.role); }
+
+function span(cls, text) { const s = document.createElement('span'); s.className = cls; s.textContent = text; return s; }
+function msgEl(m) {
+  const el = document.createElement('div');
+  el.append(span('time', fmtTime(m.ts)));
+  if (S.view === '*') {
+    const t = span('chan', '#' + m.channel);
+    t.onclick = e => { e.stopPropagation(); openChat(m.channel, false); };
+    el.append(t);
+  }
+  if (m.sys) { el.className = 'm sys' + (m.mod ? ' mod' : ''); el.append(document.createTextNode(m.text)); return el; }
+  el.className = 'm' + (m.deleted ? ' del' : '') + (m.mention ? ' hl' : '') + (m.first ? ' first' : '');
+  el.dataset.id = m.id || '';
+  el.dataset.user = m.login;
+  el.dataset.chan = m.channel;
+  if (m.replyTo) el.prepend(span('reply', `↪ @${m.replyTo}: ${m.replyText}`));
+  for (const b of m.badges.split(',')) {
+    const def = BADGES[b.split('/')[0]];
+    if (def) el.append(span('bdg ' + def[1], def[0]));
+  }
+  const u = span('user', m.name);
+  u.style.color = userColor(m);
+  el.append(u, document.createTextNode(m.action ? ' ' : ': '));
+  const body = span('body', '');
+  if (m.action) body.style.color = userColor(m);
+  body.append(renderBody(m.text, m.emotes));
+  el.append(body);
+  el.onclick = () => openSheet(m);
+  return el;
+}
+function renderBody(text, emotes) {
+  const frag = document.createDocumentFragment();
+  if (!emotes) { frag.append(text); return frag; }
+  const chars = Array.from(text), ranges = [];
+  for (const part of emotes.split('/')) {
+    const [id, pos] = part.split(':');
+    if (!pos) continue;
+    for (const r of pos.split(',')) { const [a, b] = r.split('-').map(Number); ranges.push([a, b, id]); }
+  }
+  ranges.sort((x, y) => x[0] - y[0]);
+  let i = 0;
+  for (const [a, b, id] of ranges) {
+    if (a < i) continue;
+    frag.append(chars.slice(i, a).join(''));
+    const img = document.createElement('img');
+    img.className = 'emote';
+    img.src = `https://static-cdn.jtvnw.net/emoticons/v2/${encodeURIComponent(id)}/default/dark/1.0`;
+    img.alt = chars.slice(a, b + 1).join('');
+    img.loading = 'lazy';
+    frag.append(img);
+    i = b + 1;
+  }
+  frag.append(chars.slice(i).join(''));
+  return frag;
+}
+
+// ---------- Folha de ações (toque numa mensagem) ----------
+function broadcasterIdOf(m) { return m.roomId || S.rooms.get(m.channel)?.roomId || S.byLogin.get(m.channel)?.id; }
+async function mod(m, a) {
+  const req = { broadcasterId: broadcasterIdOf(m), userId: m.userId, login: m.login, ...a };
+  try {
+    await moderate(req);
+    toast({ delete: 'Mensagem apagada', timeout: `Timeout de ${fmtDur(req.duration)} em ${m.login}`, ban: `${m.login} banido`, unban: `${m.login} desbanido` }[a.action], 'ok');
+    closeSheet();
+  } catch (e) { toast(e.message, 'err'); }
+}
+function btn(label, cls, fn) { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; return b; }
+
+function openSheet(m) {
+  if (m.sys) return;
+  const sh = $('sheet');
+  sh.textContent = '';
+  const head = document.createElement('div');
+  head.className = 'head';
+  const name = document.createElement('b');
+  name.textContent = m.name;
+  name.style.color = userColor(m);
+  head.append(name, btn('✕', 'icon', closeSheet));
+  sh.append(head, Object.assign(document.createElement('div'), { className: 'sub', textContent: `#${m.channel} • ${fmtTime(m.ts)}` }));
+  const msg = document.createElement('div');
+  msg.className = 'msg';
+  msg.append(renderBody(m.text, m.emotes));
+  sh.append(msg);
+
+  const canAct = isModOf(m.channel) && m.login !== cfg.user.login && !isPrivileged(m);
+  if (canAct) {
+    if (m.id) sh.append(btn('🗑  Apagar mensagem', 'full', () => mod(m, { action: 'delete', messageId: m.id })));
+    const reason = document.createElement('input');
+    reason.placeholder = 'Motivo (opcional)';
+    reason.style.marginTop = '10px';
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    for (const [t, d] of [['1min', 60], ['10min', 600], ['1h', 3600], ['24h', 86400]]) {
+      grid.append(btn(t, '', () => mod(m, { action: 'timeout', duration: d, reason: reason.value })));
+    }
+    const row = document.createElement('div');
+    row.className = 'row';
+    const ban = btn('Banir', 'danger', () => { if (confirm(`Banir ${m.login} de #${m.channel}?`)) mod(m, { action: 'ban', reason: reason.value }); });
+    const unban = btn('Desbanir', '', () => mod(m, { action: 'unban' }));
+    ban.style.flex = unban.style.flex = '1';
+    row.append(ban, unban);
+    sh.append(reason, Object.assign(document.createElement('div'), { className: 'sub', textContent: 'Timeout:', style: 'margin:10px 0 0' }), grid, row);
+  } else if (!isModOf(m.channel)) {
+    sh.append(Object.assign(document.createElement('div'), { className: 'sub', textContent: 'Você não é mod neste canal.' }));
+  }
+
+  const own = (S.msgs.get(m.channel) || []).filter(x => !x.sys && x.login === m.login).slice(-15);
+  if (own.length > 1) {
+    const hist = document.createElement('div');
+    hist.className = 'hist';
+    hist.append(Object.assign(document.createElement('div'), { textContent: 'Mensagens recentes:', style: 'color:var(--text)' }));
+    for (const x of own) {
+      const d = document.createElement('div');
+      if (x.deleted) d.className = 'del';
+      d.textContent = `${fmtTime(x.ts)}  ${x.text}`;
+      hist.append(d);
+    }
+    sh.append(hist);
+  }
+  sh.append(btn('Ver perfil na Twitch', 'full', () => window.open('https://www.twitch.tv/' + m.login, '_blank')));
+  $('shade').classList.remove('hidden');
+  sh.classList.remove('hidden');
+}
+function closeSheet() { $('sheet').classList.add('hidden'); $('shade').classList.add('hidden'); }
+$('shade').onclick = closeSheet;
+
+// ---------- Enviar / comandos ----------
+function parseDur(s) {
+  const m = /^(\d+)([smhd]?)$/i.exec(s || '');
+  return m ? Number(m[1]) * ({ s: 1, m: 60, h: 3600, d: 86400 }[m[2].toLowerCase()] || 1) : null;
+}
+async function send() {
+  const inp = $('input');
+  const text = inp.value.trim();
+  if (!text || !S.view || S.view === '*') return;
+  const ch = S.view;
+  const base = { channel: ch, roomId: S.rooms.get(ch)?.roomId || S.byLogin.get(ch)?.id };
+  const [cmd, ...rest] = text.split(/\s+/);
+  const target = () => ({ ...base, login: (rest[0] || '').replace('@', '').toLowerCase() });
+  try {
+    switch (cmd.toLowerCase()) {
+      case '/ban':
+        if (!rest[0]) throw new Error('Use: /ban usuario [motivo]');
+        await mod(target(), { action: 'ban', reason: rest.slice(1).join(' ') });
+        break;
+      case '/timeout': {
+        if (!rest[0]) throw new Error('Use: /timeout usuario [10m] [motivo]');
+        const d = parseDur(rest[1]);
+        await mod(target(), { action: 'timeout', duration: d || 600, reason: rest.slice(d ? 2 : 1).join(' ') });
+        break;
+      }
+      case '/unban': case '/untimeout':
+        if (!rest[0]) throw new Error(`Use: ${cmd} usuario`);
+        await mod(target(), { action: 'unban' });
+        break;
+      default:
+        if (cmd.startsWith('/') && cmd.toLowerCase() !== '/me') throw new Error('Comandos: /ban, /timeout, /unban, /me');
+        sendChat(ch, text);
+    }
+    inp.value = '';
+  } catch (e) { toast(e.message, 'err'); }
+}
+$('sendBtn').onclick = send;
+$('input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+setInterval(() => { if (S.view && S.view !== '*') renderHeader(); }, 60000);
+
+// ---------- Início ----------
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+(async () => {
+  handleRedirect();
+  if (!cfg.token) { show('loginScr'); return; }
+  show('listScr');
+  renderList();
+  try {
+    await loadIdentity();
+    $('mename').textContent = cfg.user.name;
+    ircConnect();
+    loadChannels();
+  } catch (e) {
+    if (cfg.token) toast(e.message, 'err');
+  }
+})();
+</script>
+</body>
+</html>
