@@ -4,4 +4,5 @@ data/
 # Arquivos locais
 .claude/
 celular/
+miner/
 *.lnk

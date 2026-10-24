@@ -49,6 +49,8 @@ function publicState() {
     joined: [...irc.joined],
     watching: [...players.keys()],
     streamlink: !!findStreamlink(),
+    // O botão do miner só aparece para quem tem a pasta miner/ (não vai no repositório público).
+    miner: fs.existsSync(path.join(__dirname, 'miner')),
   };
 }
 
@@ -235,6 +237,24 @@ async function getChannels() {
       live: !!s, title: s?.title || '', game: s?.game_name || '', viewers: s?.viewer_count || 0, startedAt: s?.started_at || null,
     };
   });
+}
+
+// Gera a lista de canais para o miner (pasta miner/, app separado).
+// Ordem = prioridade: ao vivo primeiro, depois mod, VIP e extras. Seu próprio canal não rende pontos.
+async function exportToMiner() {
+  const dir = path.join(__dirname, 'miner');
+  if (!fs.existsSync(dir)) throw new Error('Pasta "miner" não encontrada ao lado do Mod Hub.');
+  const rank = { mod: 0, vip: 1, extra: 2 };
+  const list = (await getChannels())
+    .filter(c => c.role !== 'own')
+    .sort((a, b) => (b.live - a.live) || (rank[a.role] - rank[b.role]) || (b.viewers - a.viewers) || a.login.localeCompare(b.login));
+  const lines = [
+    `# Gerado pelo Twitch Mod Hub em ${new Date().toLocaleString('pt-BR')}. A ordem é a prioridade.`,
+    ...list.map(c => c.login),
+  ];
+  fs.writeFileSync(path.join(dir, 'canais.txt'), lines.join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ username: config.login }, null, 2));
+  return { count: list.length, dir };
 }
 
 function addExtraChannel(login) {
@@ -674,6 +694,7 @@ const server = http.createServer(async (req, res) => {
       case '/api/channels': needLogin(); return json(res, 200, await getChannels());
       case '/api/join': needLogin(); joinChannel(body.channel); return json(res, 200, {});
       case '/api/part': needLogin(); partChannel(body.channel); return json(res, 200, {});
+      case '/api/export-miner': needLogin(); return json(res, 200, await exportToMiner());
       case '/api/add-channel': needLogin(); return json(res, 200, { channel: addExtraChannel(body.channel) });
       case '/api/remove-channel': needLogin(); partChannel(body.channel); removeExtraChannel(String(body.channel)); return json(res, 200, {});
       case '/api/send': needLogin(); sendChat(body.channel, body.text); return json(res, 200, {});

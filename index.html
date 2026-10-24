@@ -167,6 +167,7 @@
       <input id="filter" placeholder="Filtrar canais…">
       <input id="addChan" placeholder="Adicionar canal (Enter)…">
       <label><input type="checkbox" id="autojoin"> Entrar sozinho no chat de quem ficar ao vivo</label>
+      <button id="exportMiner" class="hidden" title="Atualiza a lista de canais do miner (pasta miner/)">Exportar canais para o miner</button>
     </div>
     <div id="chanlist"></div>
   </aside>
@@ -253,6 +254,7 @@ function applyState(st) {
   S.joined = new Set(st.joined || []);
   S.watching = new Set(st.watching || []);
   S.streamlink = st.streamlink;
+  $('exportMiner').classList.toggle('hidden', !st.miner);
   $('setup').classList.toggle('hidden', st.configured);
   $('login').classList.toggle('hidden', !st.configured || st.loggedIn);
   $('app').classList.toggle('hidden', !st.loggedIn);
@@ -341,6 +343,12 @@ setInterval(() => { if (S.me) loadChannels(); }, 60000);
 $('autojoin').checked = lsGet('autojoin', true);
 $('autojoin').onchange = () => { lsSet('autojoin', $('autojoin').checked); if ($('autojoin').checked) loadChannels(); };
 $('filter').oninput = () => renderList();
+$('exportMiner').onclick = async () => {
+  try {
+    const r = await api('/api/export-miner', {});
+    toast(`${r.count} canais exportados. Reinicie o miner para usar a lista nova.`, 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+};
 $('addChan').addEventListener('keydown', async e => {
   if (e.key !== 'Enter' || !$('addChan').value.trim()) return;
   try {
