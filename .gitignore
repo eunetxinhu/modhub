@@ -1,0 +1,7 @@
+# Login e perfil da janela: nunca publicar
+data/
+
+# Arquivos locais
+.claude/
+celular/
+*.lnk
